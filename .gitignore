@@ -1,0 +1,5 @@
+ferramentas/biblioteca/
+ferramentas/ref/
+ferramentas/gastos.txt
+__pycache__/
+.DS_Store
