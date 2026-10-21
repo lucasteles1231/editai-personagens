@@ -9,6 +9,9 @@ os quadros do avatar.
 O Editai leva uma cópia destas partes, de um commit fixo daqui: o `catalogo.json` traz o hash
 de cada arquivo. São uns 360 KB, e a página pede ao Editai só as partes que vai desenhar.
 
+**Um chapéu corta o cabelo.** O boné e o gorro levam `data-cobre="cabelo"`, e o desenhista só
+mostra o cabelo que sai por baixo deles: o black power e o coque não passam por cima do chapéu.
+
 ## O que tem aqui
 
 | Pasta | O quê |
@@ -32,8 +35,13 @@ O que dá para escolher hoje:
 As partes fixas mudam com a pose, e ninguém as escolhe:
 - os olhos (aberto, de lado, para cima, arregalado, apertado e meio fechado);
 - as sobrancelhas (normal e erguida);
-- as bocas (o sorriso do manequim, neutra, "o", rindo, meia e aberta);
+- as bocas (sorriso, neutra, "o", rindo, meia e aberta);
 - os braços das 12 poses.
+
+O manequim tem três grupos:
+- **a cabeça**, até o queixo;
+- **o pescoço**, numa camada abaixo da roupa, para a gola de cada roupa cobrir ele;
+- **o corpo**, o suéter, que sai quando outra roupa é escolhida.
 
 ## Como uma parte é feita
 
@@ -50,15 +58,25 @@ As partes fixas mudam com a pose, e ninguém as escolhe:
 4. **A vetorização:** a parte vai para a grade de 150 × 150. Cada pixel vira uma classe pelo
    tom: a base, a `-sombra`, a `-sombra2` e a `-luz`, mais o `contorno` e o `branco`. Os tons
    saem dos picos de luminância do próprio desenho, e o SVG é feito de faixas de pixel.
-
-**A boca** tem regras próprias:
-- **O desenho inteiro:** ela leva tudo o que está na caixa dela, e não só o que mudou.
-- **Pixel a pixel:** o contorno é escuro e sem vermelho, os dentes são claros e o de dentro é o
-  vermelho escuro. A língua é o que está cercado pela boca, mesmo quando o tom dela parece pele.
-- **A pele por baixo:** a pele que a boca repinta, onde estava o sorriso do manequim, vai na
-  camada da cabeça, por baixo da barba.
-- **A meia boca não é gerada:** ela é desenhada a partir da aberta, com a mesma largura, metade
-  da altura, o contorno em cima e embaixo e uma fileira de dentes.
+   - **A íris e a sobrancelha** são marrom-escuras no Nano Banana e cairiam no contorno. Por isso,
+     o marrom com o branco do olho dos dois lados é `olho`, e o da sobrancelha é `sobrancelha`:
+     a cor escolhida pinta os dois.
+   - **O branco da roupa** (a camiseta por baixo da jaqueta, os botões) é `roupa2`, a segunda
+     cor dela.
+5. **A cabeça em cápsula** (`capsula.py`), como no exemplo do dono: o alto da cabeça com a
+   largura do rosto. O manequim gerado tinha o alto bem mais largo que o resto, como uma
+   lâmpada. A mudança é feita na grade, linha a linha:
+   - **A cúpula** é estreitada em volta do centro, e dela até a orelha os lados ficam retos.
+   - **A largura nova** (44 px) é a em que os olhos ocupam a mesma fração do rosto que no
+     exemplo (uns 77%).
+   - **O contorno, a sombra e o brilho** andam para dentro.
+   - **Os cabelos e os chapéus** acompanham.
+   - **Da orelha para baixo**, inclusive o queixo, nada muda.
+6. **As bocas e os óculos** são desenhados em código (`desenhar_partes.py`). Reduzidos à grade,
+   os da IA viravam riscos e armações furadas.
+   - **As bocas** são mapas de pixel simétricos, centrados no rosto.
+   - **Os óculos** ficam em volta dos olhos medidos na cabeça, e a lente tinge o que está
+     embaixo.
 
 ## As classes de cor
 
@@ -84,9 +102,14 @@ cd ferramentas
 mkdir -p biblioteca && cp ../manequim/manequim.png biblioteca/
 # as poses dos braços pedem uma imagem de referência por pose em ref/<pose>.png
 GEMINI_API_KEY=... python gerar_lote.py
-uv run --with numpy --with pillow --with scipy python extrair_biblioteca.py biblioteca ../partes
+uv run --with numpy --with pillow --with scipy python extrair_biblioteca.py biblioteca /tmp/extraidas
+uv run --with numpy --with scipy python capsula.py /tmp/extraidas ../partes
+uv run --with numpy --with scipy python desenhar_partes.py ../partes
 python catalogo.py ../partes ../catalogo.json
 ```
+
+Só o `capsula.py` e o `desenhar_partes.py` não custam nada: dá para mudar o formato da cabeça
+(`OLHOS_NA_LARGURA`) e o desenho das bocas e dos óculos sem gerar imagem nenhuma.
 
 ## Licenças
 
