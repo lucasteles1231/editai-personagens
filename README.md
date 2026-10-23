@@ -7,10 +7,11 @@ partes (pela foto da pessoa, com o Gemini, ou à mão), pinta cada espaço com a
 os quadros do avatar.
 
 O Editai leva uma cópia destas partes, de um commit fixo daqui: o `catalogo.json` traz o hash
-de cada arquivo. São uns 360 KB, e a página pede ao Editai só as partes que vai desenhar.
+de cada arquivo. São uns 900 KB, e a página pede ao Editai só as partes que vai desenhar.
 
-**Um chapéu corta o cabelo.** O boné e o gorro levam `data-cobre="cabelo"`, e o desenhista só
-mostra o cabelo que sai por baixo deles: o black power e o coque não passam por cima do chapéu.
+**Um chapéu amassa o cabelo.** O boné e o gorro levam `data-cobre="cabelo"`. O cabelo que fica
+debaixo deles não aparece, e o black power e o coque não passam por cima. O que sai pelos lados é
+achatado até a aba: fica amassado, e não cortado reto.
 
 ## O que tem aqui
 
@@ -31,6 +32,9 @@ O que dá para escolher hoje:
 - **4 óculos:** redondos, retangulares sem aro, quadrados grossos e de sol.
 - **4 acessórios:** boné, gorro, fone de ouvido e brincos.
 - **4 roupas:** o suéter do manequim, moletom, camisa social e jaqueta aberta.
+- **20 cabeças de bicho**, no lugar da cabeça da pessoa: cachorro, gato, raposa, panda, coelho,
+  ovelha, pato, girafa, elefante, urso, leão, lobo, pinguim, porco, vaca, galinha, sapo, cavalo,
+  lontra e guaxinim (veja [Os bichos](#os-bichos)).
 
 As partes fixas mudam com a pose, e ninguém as escolhe:
 - os olhos (aberto, de lado, para cima, arregalado, apertado e meio fechado);
@@ -66,17 +70,57 @@ O manequim tem três grupos:
 5. **A cabeça em cápsula** (`capsula.py`), como no exemplo do dono: o alto da cabeça com a
    largura do rosto. O manequim gerado tinha o alto bem mais largo que o resto, como uma
    lâmpada. A mudança é feita na grade, linha a linha:
-   - **A cúpula** é estreitada em volta do centro, e dela até a orelha os lados ficam retos.
    - **A largura nova** (44 px) é a em que os olhos ocupam a mesma fração do rosto que no
      exemplo (uns 77%).
-   - **O contorno, a sombra e o brilho** andam para dentro.
-   - **Os cabelos e os chapéus** acompanham.
+   - **A testa** perde 4 linhas logo acima da sobrancelha (`TESTA_MENOS`): no exemplo, da
+     sobrancelha ao alto é 0,49 da largura da cabeça. Os cabelos e o fone perdem as mesmas linhas;
+     os chapéus perdem linhas da copa, para a aba ficar inteira.
+   - **A cúpula é redesenhada** por uma superelipse (`EXPOENTE_DA_CUPULA` = 2,2, um pouco menos
+     redonda que a elipse): o contorno de 1 pixel em degraus limpos, a sombra de 2 e o brilho.
+     Estreitar linha a linha tinha deixado a borda amassada.
+   - **Os cabelos e os chapéus** crescem até encostar no contorno novo: eles não têm contorno em
+     cima, usam o da cabeça. Os furos pequenos do cabelo acima da sobrancelha são tapados: na
+     cabeça antiga caíam na sombra marrom, e na nova mostravam pele.
    - **Da orelha para baixo**, inclusive o queixo, nada muda.
 6. **As bocas e os óculos** são desenhados em código (`desenhar_partes.py`). Reduzidos à grade,
    os da IA viravam riscos e armações furadas.
    - **As bocas** são mapas de pixel simétricos, centrados no rosto.
    - **Os óculos** ficam em volta dos olhos medidos na cabeça, e a lente tinge o que está
      embaixo.
+
+## Os bichos
+
+Cada bicho é uma cabeça (`partes/cabeca/<bicho>.svg`, com o pescoço e o corpo do manequim) e os
+olhos e as bocas dele (`olhos/<bicho>.<estado>.svg` e `boca/<bicho>.<estado>.svg`). No
+`catalogo.json`, `bichos` traz o nome e as cores sugeridas de cada um, e `pelagem` as sugestões da
+pelagem. Quem monta usa `{cabeca, olhos, boca}` = o id do bicho e deixa o cabelo, a barba, a
+sobrancelha, os óculos e o acessório de fora: eles são da cabeça humana.
+
+1. **A cabeça** nasce de uma edição do manequim no Nano Banana 2 (`gerar_bichos.py`): só a cabeça
+   trocada, com uma imagem de referência do estilo para cada bicho (as usadas não estão aqui).
+2. **O recorte** (`extrair_bichos.py`) separa as cores:
+   - **A pelagem é o espaço `pele`**, em até quatro tons. A cor escolhida pinta o bicho, o
+     pescoço e as mãos das poses. É o maior grupo da cabeça: a cor principal (a raposa, o porco),
+     o cinza (o lobo, o gato rajado) ou o branco (o panda, o pato).
+   - **O preto é `contorno`**, as manchas do panda e a máscara do guaxinim também.
+   - **O resto que tem cor fica fixo:** o rosa da orelha, o bico, a crista, o chifre. A classe
+     diz a cor, `fixa-rrggbb`, e quem monta pinta com ela, sem derivar tom.
+   - **Os olhos e a boca gerados saem**, e o buraco pega a pelagem de volta. Os olhos são
+     achados pelo brilho branco deles, um de cada lado; a boca, logo abaixo do nariz. No sorriso
+     de bochecha a bochecha (o porco, o sapo), só o meio sai, e a boca desenhada continua a
+     linha dele.
+3. **Os olhos e as bocas** são desenhados em código (`desenhar_bichos.py`), no lugar medido no
+   recorte (`bichos.json`): os seis olhares das poses e as seis bocas da fala. No bico (o pato, a
+   galinha, o pinguim), a boca é o bico abrindo no meio; fechado, ele fica como veio.
+
+```bash
+cd ferramentas
+GEMINI_API_KEY=... python gerar_bichos.py /tmp/gerado /caminho/das/referencias
+uv run --with numpy --with pillow --with scipy python extrair_bichos.py /tmp/gerado ../partes /tmp/bichos
+uv run --with numpy python desenhar_bichos.py /tmp/bichos/bichos.json /tmp/bichos
+# copie /tmp/bichos/{cabeca,olhos,boca}/*.svg para ../partes e acrescente o bicho em BICHOS (catalogo.py)
+python catalogo.py ../partes ../catalogo.json
+```
 
 ## As classes de cor
 
@@ -88,6 +132,7 @@ O manequim tem três grupos:
 | `roupa-*`, `roupa2-*` | a roupa e o segundo tom dela |
 | `oculos-*`, `acessorio-*` | a armação e os acessórios |
 | `contorno`, `branco`, `boca`, `lingua`, `dente` | fixas |
+| `fixa-rrggbb` | fixa, com a cor no nome (os bichos: o rosa da orelha, o bico, a crista) |
 
 Quem monta escolhe a cor base de cada espaço e deriva os tons dela (o `estilo` do
 `padrao.json` diz quanto cada tom escurece ou clareia).
@@ -109,7 +154,8 @@ python catalogo.py ../partes ../catalogo.json
 ```
 
 Só o `capsula.py` e o `desenhar_partes.py` não custam nada: dá para mudar o formato da cabeça
-(`OLHOS_NA_LARGURA`) e o desenho das bocas e dos óculos sem gerar imagem nenhuma.
+(`OLHOS_NA_LARGURA`, `EXPOENTE_DA_CUPULA`, `TESTA_MENOS`) e o desenho das bocas e dos óculos sem
+gerar imagem nenhuma.
 
 ## Licenças
 

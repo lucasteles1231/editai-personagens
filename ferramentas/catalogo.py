@@ -79,6 +79,40 @@ ESCOLHAS = {
     },
 }
 
+# os bichos (21/10/2026): a cabeça no lugar da do manequim, com os olhos e as bocas desenhados em
+# código para ela (desenhar_bichos.py). A pelagem é o espaço "pele": a cor escolhida pinta o bicho, o
+# pescoço e as mãos. Sem cabelo, barba, sobrancelha, óculos nem acessório (eles são da cabeça humana).
+BICHOS = {
+    "cachorro": {"pt": "cachorro", "pelagem": "#e69d4e", "olho": "#2a1d14"},
+    "gato": {"pt": "gato", "pelagem": "#8a736c", "olho": "#c8902a"},
+    "raposa": {"pt": "raposa", "pelagem": "#f77e25", "olho": "#2a1d14"},
+    "panda": {"pt": "panda", "pelagem": "#ffffff", "olho": "#2a1d14"},
+    "coelho": {"pt": "coelho", "pelagem": "#ddc3b8", "olho": "#2a1d14"},
+    "ovelha": {"pt": "ovelha", "pelagem": "#f6dbbe", "olho": "#2a1d14"},
+    "pato": {"pt": "pato", "pelagem": "#ffffff", "olho": "#2a1d14"},
+    "girafa": {"pt": "girafa", "pelagem": "#eca927", "olho": "#2a1d14"},
+    "elefante": {"pt": "elefante", "pelagem": "#a08b8d", "olho": "#2a1d14"},
+    "urso": {"pt": "urso", "pelagem": "#8f5031", "olho": "#2a1d14"},
+    "leao": {"pt": "leão", "pelagem": "#cd6420", "olho": "#2a1d14"},
+    "lobo": {"pt": "lobo", "pelagem": "#808a8e", "olho": "#2a1d14"},
+    "pinguim": {"pt": "pinguim", "pelagem": "#ffffff", "olho": "#2a1d14"},
+    "porco": {"pt": "porco", "pelagem": "#faa597", "olho": "#2a1d14"},
+    "vaca": {"pt": "vaca", "pelagem": "#424242", "olho": "#2a1d14"},
+    "galinha": {"pt": "galinha", "pelagem": "#ffffff", "olho": "#2a1d14"},
+    "sapo": {"pt": "sapo", "pelagem": "#719c42", "olho": "#2a1d14"},
+    "cavalo": {"pt": "cavalo", "pelagem": "#bb6032", "olho": "#2a1d14"},
+    "lontra": {"pt": "lontra", "pelagem": "#9d664c", "olho": "#2a1d14"},
+    "guaxinim": {"pt": "guaxinim", "pelagem": "#8a8a89", "olho": "#2a1d14"},
+}
+ESTADOS_DOS_OLHOS = ("aberto", "lado", "cima", "arregalado", "apertado", "meio")
+ESTADOS_DAS_BOCAS = ("sorriso", "neutra", "o", "meia", "aberta", "rindo")
+PELAGEM = {
+    "rotulo": "Pelagem",
+    "sugestoes": {"#e69d4e": "caramelo", "#f77e25": "laranja", "#a0663a": "marrom", "#3a2a20": "preta",
+                  "#8a736c": "cinza", "#c9c4bf": "cinza claro", "#ddc3b8": "bege", "#ffffff": "branca",
+                  "#eca927": "amarela", "#faa597": "rosa", "#719c42": "verde"},
+}
+
 # as partes fixas: vêm do manequim ou mudam com a pose, ninguém escolhe
 FIXAS = {"cabeca": "manequim", "olhos": "ia", "sobrancelhas": "ia", "nariz": "nenhum", "boca": "ia", "bracos": "ia"}
 
@@ -145,6 +179,14 @@ def main() -> None:
     for cat, id_ in FIXAS.items():
         if id_ != "nenhum" and not any(r.startswith(f"{cat}/{id_}") for r in arquivos):
             raise SystemExit(f"falta a parte fixa {cat}/{id_}")
+    bichos = []
+    for id_, info in BICHOS.items():
+        precisa = [f"cabeca/{id_}.svg", *(f"olhos/{id_}.{e}.svg" for e in ESTADOS_DOS_OLHOS),
+                   *(f"boca/{id_}.{e}.svg" for e in ESTADOS_DAS_BOCAS)]
+        falta = [r for r in precisa if r not in arquivos]
+        if falta:
+            raise SystemExit(f"falta do bicho {id_}: {falta}")
+        bichos.append({"id": id_, **info})
     saida.write_text(json.dumps({
         "editai": "catalogo-do-personagem",
         "versao": 1,
@@ -152,9 +194,12 @@ def main() -> None:
         "fixas": FIXAS,
         "cores": CORES,
         "padrao": PADRAO,
+        "bichos": bichos,
+        "pelagem": PELAGEM,
         "arquivos": arquivos,
     }, ensure_ascii=False, indent=1) + "\n")
-    print(f"{saida}: {sum(len(c['opcoes']) for c in categorias.values())} opções, {len(arquivos)} arquivos, "
+    print(f"{saida}: {sum(len(c['opcoes']) for c in categorias.values())} opções, {len(bichos)} bichos, "
+          f"{len(arquivos)} arquivos, "
           f"{sum(a['bytes'] for a in arquivos.values()) // 1024} KB")
 
 
