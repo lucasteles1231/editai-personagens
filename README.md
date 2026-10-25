@@ -49,13 +49,13 @@ O manequim tem três grupos:
 
 ## Como uma parte é feita
 
-1. **O manequim:** um personagem careca, sem barba, sem óculos e com um suéter liso, no estilo
-   pixel art do apresentador de um projeto anterior. O crânio foi ajustado em código
+1. **O manequim:** um personagem careca, sem barba, sem óculos e com um suéter liso, em pixel
+   art. O crânio foi ajustado em código
    (`encurtar_cranio.py`, `arredondar_cranio.py` e `brilho.py`).
 2. **A edição:** cada parte nasce como uma edição do manequim no Nano Banana 2
    (`gemini-3.1-flash-image`): "ponha este cabelo", "esta barba", "estes braços". Os pedidos
-   estão em `ferramentas/lista.json`. As poses usaram o apresentador de um projeto anterior como
-   referência da pose dos braços (essas imagens não estão aqui).
+   estão em `ferramentas/lista.json`. As poses usaram imagens de referência para a pose dos
+   braços (essas imagens não estão aqui).
 3. **O recorte:** `extrair_biblioteca.py` compara a edição com o manequim e fica só com o que
    mudou, dentro da região da categoria. As regiões saem dos marcos medidos no manequim (os
    olhos, as sobrancelhas, a boca e o começo da roupa).
